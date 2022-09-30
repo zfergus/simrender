@@ -51,3 +51,12 @@ git clone https://github.com/libigl/libigl-python-bindings.git
 cd libigl-python-bindings
 python setup.py install
 ```
+
+### Headless rendering
+
+In order to render headlessly you need to either install OSMesa or EGL. This is a requirment of `pyrender` and you can find more details [here](https://pyrender.readthedocs.io/en/latest/install/index.html#getting-pyrender-working-with-osmesa).
+
+By default `simrender` tries to use EGL for GPU rendering, but you can specify the rendering engine by doing
+```
+PYOPENGL_PLATFORM=osmesa python render.py [...]
+```
