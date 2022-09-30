@@ -39,6 +39,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          
+      - name: Install libigl
+        run: |
+          git clone https://github.com/libigl/libigl-python-bindings.git
+          cd libigl-python-bindings
+          python setup.py install
 
       - name: Test
         run: python render.py --help
