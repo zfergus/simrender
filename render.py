@@ -1,6 +1,8 @@
 # Top of main python script
 import os
-os.environ['PYOPENGL_PLATFORM'] = 'egl'  # noqa
+if 'PYOPENGL_PLATFORM' not in os.environ:  # noqa
+    os.environ['PYOPENGL_PLATFORM'] = 'egl'  # noqa
+print("Using PYOPENGL_PLATFORM={}".format(os.environ['PYOPENGL_PLATFORM']))  # noqa
 
 import argparse
 import pathlib
@@ -352,8 +354,11 @@ def parse_vtm(path):
     tree = ET.parse(path)
     root = tree.getroot()
     blocks = root.find("vtkMultiBlockDataSet").findall("Block")
-    assert(len(blocks) == 1)
-    dataset = blocks[0].find("DataSet")
+    # assert(len(blocks) == 1)
+    for block in blocks:
+        if block.get("name") == "Volume":
+            break
+    dataset = block.find("DataSet")
     return resolve_path(dataset.attrib["file"], path.parent)
 
 
@@ -411,7 +416,7 @@ def parse_args():
     parser.add_argument("--scalar-field", type=str, default="E",
                         help="Scalar field to use as colors.")
     parser.add_argument("--tensor-field", type=str, default=None,
-                        help="Scalar field to use as colors.")
+                        help="Scalar field to visualize as a vector field of arrow.")
     return parser.parse_args()
 
 
