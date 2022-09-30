@@ -10,20 +10,12 @@ on:
 
 jobs:
   Build:
-    name: ${{ matrix.name }} Python ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
         python-version: ["3.8", "3.9", "3.10"]
-        include:
-          - os: ubuntu-latest
-            name: Linux
-          - os: windows-latest
-            name: Windows
-          - os: macOS-latest
-            name: macOS
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
