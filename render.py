@@ -304,7 +304,12 @@ def load_mesh(path):
         V += mesh.point_data["solution"][I]
 
     point_data = dict((k, v[I]) for k, v in mesh.point_data.items())
-    point_data["is_obstacle"] = (point_data["E"] == 0).flatten()
+    if "E" in point_data:
+        point_data["is_obstacle"] = (point_data["E"] == 0).flatten()
+    else:
+        point_data["is_obstacle"] = np.zeros((V.shape[0],), dtype=bool)
+
+    # V[point_data["is_obstacle"]] *= [[1e3, 0, 1e3]]
 
     mesh = meshio.Mesh(points=V, cells=cells, point_data=point_data)
 
@@ -429,7 +434,7 @@ def parse_args():
                         help="Disable the wireframe rendering.")
     parser.add_argument("--camera-height", type=float, default=0,
                         help="Height of the camera with the world normalized.")
-    parser.add_argument("--base-zoom", type=float, default=2.0,
+    parser.add_argument("--base-zoom", type=float, default=1.0,
                         help="Camera base zoom level.")
     parser.add_argument("--scalar-field", type=str, default="E",
                         help="Scalar field to use as colors.")
@@ -441,6 +446,8 @@ def parse_args():
                         help="Use scalar field as colors in log scale.")
     parser.add_argument("--tensor-field", type=str, default=None,
                         help="Scalar field to visualize as a vector field of arrow.")
+    parser.add_argument("--obstacle-alpha", type=float, default=1.0,
+                        help="Transparency of obstacles.")
     return parser.parse_args()
 
 
@@ -495,9 +502,12 @@ def main(args=None):
             scalar_field=args.scalar_field,
             scalar_field_min=args.scalar_field_min,
             scalar_field_max=args.scalar_field_max,
-            scalar_field_log=args.scalar_field_log)
+            scalar_field_log=args.scalar_field_log,
+            obstacle_alpha=args.obstacle_alpha,
+        )
 
         zooms_and_shifts = [
+            # compute_scale_and_shift_to_fit_mesh(mesh.points[~mesh.point_data["is_obstacle"]]) for mesh in meshes
             compute_scale_and_shift_to_fit_mesh(mesh.points) for mesh in meshes
         ]
         zooms_and_shifts = (
