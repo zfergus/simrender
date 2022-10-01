@@ -3,6 +3,9 @@ scipy
 matplotlib
 tqdm
 imageio
+imageio[ffmpeg]
+imageio[pyav]
+Pillow
 natsort
 trimesh
 meshio

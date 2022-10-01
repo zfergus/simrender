@@ -162,9 +162,8 @@ def create_default_scene(aspectRatio, bg_color=None, camera_height=0.0):
     return scene
 
 
-def render(
-        mesh, width=800, height=600, bg_color=None, wireframe=True,
-        camera_height=0.0, base_zoom=1.0, tensor_field=None, zoom=None, shift=None):
+def render(mesh, width=800, height=600, bg_color=None, wireframe=True, smooth=False,
+           camera_height=0.0, base_zoom=1.0, tensor_field=None, zoom=None, shift=None):
     scene = create_default_scene(
         aspectRatio=width/height, bg_color=bg_color, camera_height=camera_height)
 
@@ -205,7 +204,7 @@ def render(
             mesh_args = dict(
                 is_visible=True,
                 poses=mesh_pose,
-                smooth=False
+                smooth=smooth
             )
 
             scene.add(pyrender.Mesh.from_trimesh(
@@ -312,7 +311,10 @@ def load_mesh(path):
     return mesh
 
 
-def compute_vertex_colors(meshes, scalar_field="scalar_value_avg", obstacle_alpha=1.0, cmap=cm.viridis):
+def compute_vertex_colors(
+        meshes, scalar_field="scalar_value_avg", scalar_field_min=None,
+        scalar_field_max=None, scalar_field_log=False, obstacle_alpha=1.0,
+        cmap=cm.viridis):
     if scalar_field not in meshes[0].point_data:
         print("Scalar field for color {} not found".format(scalar_field))
         print("Possible fields: {}".format(
@@ -326,16 +328,30 @@ def compute_vertex_colors(meshes, scalar_field="scalar_value_avg", obstacle_alph
             scalars = np.linalg.norm(scalars, axis=1)
         return scalars
 
-    min_scalar = np.inf
-    max_scalar = -np.inf
+    min_scalar = np.inf if scalar_field_min is None else scalar_field_min
+    max_scalar = -np.inf if scalar_field_max is None else scalar_field_max
     for mesh in meshes:
         scalars = get_scalar_field(mesh)[~mesh.point_data["is_obstacle"]]
-        min_scalar = min(min_scalar, scalars.min())
-        max_scalar = max(max_scalar, scalars.max())
+        if scalar_field_min is None:
+            min_scalar = min(min_scalar, scalars.min())
+        if scalar_field_max is None:
+            max_scalar = max(max_scalar, scalars.max())
+    print("Scalar range: [{}, {}]".format(min_scalar, max_scalar))
+
+    if scalar_field_log:
+        assert(min_scalar > 0)
+        real_min = min_scalar
+        min_scalar = np.log10(min_scalar)
+        max_scalar = np.log10(max_scalar)
+        print("Scalar range: [{}, {}]".format(min_scalar, max_scalar))
+
     scalar_range = max_scalar - min_scalar if max_scalar != min_scalar else np.inf
 
     for mesh in meshes:
         scalars = get_scalar_field(mesh)
+        if scalar_field_log:
+            scalars[scalars < real_min] = real_min
+            scalars = np.log10(scalars)
         scalars_normalized = (scalars - min_scalar) / scalar_range
         vertex_colors = cmap(scalars_normalized).reshape(-1, 4)
         vertex_colors[mesh.point_data["is_obstacle"], :] = [
@@ -409,12 +425,20 @@ def parse_args():
                         help="Zoom and shift the camera dynamically.")
     parser.add_argument("--no-wireframe", action="store_false", dest="wireframe",
                         default=True, help="Disable the wireframe rendering.")
+    parser.add_argument("--smooth", action="store_true", default=False,
+                        help="Disable the wireframe rendering.")
     parser.add_argument("--camera-height", type=float, default=0,
                         help="Height of the camera with the world normalized.")
     parser.add_argument("--base-zoom", type=float, default=2.0,
                         help="Camera base zoom level.")
     parser.add_argument("--scalar-field", type=str, default="E",
                         help="Scalar field to use as colors.")
+    parser.add_argument("--scalar-field-min", type=float, default=None,
+                        help="Scalar field max value to use as colors.")
+    parser.add_argument("--scalar-field-max", type=float, default=None,
+                        help="Scalar field min value to use as colors.")
+    parser.add_argument("--scalar-field-log", action="store_true", default=False,
+                        help="Use scalar field as colors in log scale.")
     parser.add_argument("--tensor-field", type=str, default=None,
                         help="Scalar field to visualize as a vector field of arrow.")
     return parser.parse_args()
@@ -466,7 +490,12 @@ def main(args=None):
         mesh_paths = seq["meshes"][::args.drop_frames + 1]
         meshes = [load_mesh(mesh_path) for mesh_path in tqdm(mesh_paths)]
 
-        compute_vertex_colors(meshes, scalar_field=args.scalar_field)
+        compute_vertex_colors(
+            meshes,
+            scalar_field=args.scalar_field,
+            scalar_field_min=args.scalar_field_min,
+            scalar_field_max=args.scalar_field_max,
+            scalar_field_log=args.scalar_field_log)
 
         zooms_and_shifts = [
             compute_scale_and_shift_to_fit_mesh(mesh.points) for mesh in meshes
@@ -486,7 +515,7 @@ def main(args=None):
             zoom, *shift = zooms_and_shifts[i if args.dynamic_camera else 0]
             color, _ = render(
                 mesh, width=args.width, height=args.height,
-                bg_color=args.bg_color, wireframe=args.wireframe,
+                bg_color=args.bg_color, wireframe=args.wireframe, smooth=args.smooth,
                 camera_height=args.camera_height, base_zoom=args.base_zoom,
                 tensor_field=args.tensor_field, zoom=zoom, shift=shift)
             frames.append(color)

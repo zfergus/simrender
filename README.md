@@ -1,5 +1,8 @@
 # simrender
-Render a simulation mesh sequence using Pyrender.
+
+![elephant](img/teaser.png)
+
+<center>Render a simulation mesh sequence using Pyrender.</center>
 
 ## Usage
 
@@ -35,7 +38,7 @@ options:
 
 ## Dependencies
 
-`simrender` depends on a number of other Python libraries for reading and manipulating meshs (`meshio` and `trimesh`), rendering results (`pyrender`), writing the output images and videos (`imageio`), and other utilities (e.g., `numpy`, `scipy`, `matplotlib`, `tqdm`, `natsort`). 
+`simrender` depends on a number of other Python libraries for reading and manipulating meshs (`meshio` and `trimesh`), rendering results (`pyrender`), writing the output images and videos (`imageio`), and other utilities (e.g., `numpy`, `scipy`, `matplotlib`, `tqdm`, `natsort`).
 
 All of these dependencies can be installed using the command:
 ```
