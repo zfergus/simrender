@@ -1,8 +1,9 @@
 # simrender
 
-![elephant](img/teaser.png)
-
-<center>Render a simulation mesh sequence using Pyrender.</center>
+<p align="center">
+<img src="img/teaser.png"><br>
+Render a simulation mesh sequence using Pyrender.
+</p>
 
 ## Usage
 
