@@ -1,4 +1,5 @@
 # Top of main python script
+import sys
 import os
 if 'PYOPENGL_PLATFORM' not in os.environ:  # noqa
     os.environ['PYOPENGL_PLATFORM'] = 'egl'  # noqa
@@ -410,7 +411,7 @@ def parse_pvd(path, fps=None):
     return seq
 
 
-def parse_args():
+def parse_args(cli_args=sys.argv[1:]):
     parser = argparse.ArgumentParser("Render a mesh sequence as a video.")
     parser.add_argument("--input", "-i", nargs="+", required=True, type=pathlib.Path,
                         help="Meshes to render.")
@@ -448,7 +449,7 @@ def parse_args():
                         help="Scalar field to visualize as a vector field of arrow.")
     parser.add_argument("--obstacle-alpha", type=float, default=1.0,
                         help="Transparency of obstacles.")
-    return parser.parse_args()
+    return parser.parse_args(cli_args)
 
 
 def resolve_output(mesh_sequences, outputs):
