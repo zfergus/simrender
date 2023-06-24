@@ -10,4 +10,4 @@ natsort
 trimesh
 meshio
 pyrender
-# igl
+libigl
